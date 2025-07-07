@@ -1,49 +1,68 @@
 @extends('layouts.app')
 
+@section('title', 'Dashboard Kehadiran')
+
 @section('content')
-<div class="max-w-6xl mx-auto px-4 py-6">
-    <h1 class="text-2xl font-bold mb-6">Data Absensi Siswa</h1>
+<div class="max-w-7xl mx-auto space-y-6">
 
-    @if (session('success'))
-        <div class="mb-4 p-4 bg-green-100 text-green-700 rounded">
-            {{ session('success') }}
+    <!-- Kartu Status Absensi -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        @foreach (['Masuk', 'Izin', 'Izin Kembali', 'Istirahat', 'Kembali', 'Pulang'] as $status)
+            <div class="bg-white rounded-xl text-center shadow p-4 border">
+                <p class="text-sm font-semibold text-gray-600">{{ $status }}</p>
+                <p id="status-{{ strtolower(str_replace(' ', '-', $status)) }}" class="text-lg text-gray-900 font-bold">---</p>
+            </div>
+        @endforeach
+    </div>
+
+    <!-- Jadwal Mingguan -->
+    <div class="bg-white rounded-xl shadow border overflow-auto">
+        <div class="p-4 border-b">
+            <h3 class="text-lg font-semibold text-gray-800">📅 Jadwalmu Minggu Ini</h3>
         </div>
-    @endif
-
-    <a href="{{ route('absensi.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Tambah Absensi</a>
-
-    <table class="w-full mt-6 border-collapse border border-gray-300">
-        <thead class="bg-gray-100">
-            <tr>
-                <th class="border p-2">Nama</th>
-                <th class="border p-2">Tanggal</th>
-                <th class="border p-2">Status</th>
-                <th class="border p-2">Keterangan</th>
-                <th class="border p-2">Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse ($absensis as $absensi)
-                <tr class="border-b">
-                    <td class="border p-2">{{ $absensi->siswa->nama }}</td>
-                    <td class="border p-2">{{ \Carbon\Carbon::parse($absensi->tanggal)->format('d-m-Y') }}</td>
-                    <td class="border p-2 capitalize">{{ $absensi->status }}</td>
-                    <td class="border p-2">{{ $absensi->keterangan ?? '-' }}</td>
-                    <td class="border p-2 flex gap-2">
-                        <a href="{{ route('absensi.edit', $absensi->id) }}" class="text-blue-600 hover:underline">Edit</a>
-                        <form action="{{ route('absensi.destroy', $absensi->id) }}" method="POST" onsubmit="return confirm('Yakin hapus?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-red-600 hover:underline">Hapus</button>
-                        </form>
-                    </td>
-                </tr>
-            @empty
+        <table class="min-w-full text-sm text-left divide-y divide-gray-200">
+            <thead class="bg-gray-100 text-gray-700">
                 <tr>
-                    <td colspan="5" class="text-center py-4 text-gray-500">Belum ada data absensi.</td>
+                    <th class="px-4 py-2">Tanggal</th>
+                    <th class="px-4 py-2">Hari</th>
+                    <th class="px-4 py-2">Status</th>
+                    <th class="px-4 py-2">Shift</th>
+                    <th class="px-4 py-2">Masuk</th>
+                    <th class="px-4 py-2">Pulang</th>
                 </tr>
-            @endforelse
-        </tbody>
-    </table>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @foreach ([
+                    ['09-07-2025', 'Rabu', 'WFO', 'Siang (13.00 - 21.00)', '13:00:00', '21:00:00'],
+                    ['10-07-2025', 'Kamis', 'WFO', 'Siang (13.00 - 21.00)', '13:00:00', '21:00:00'],
+                    ['11-07-2025', 'Jumat', 'WFO', 'Siang (13.00 - 21.00)', '13:00:00', '21:00:00'],
+                    ['12-07-2025', 'Sabtu', 'WFO', 'Siang (13.00 - 21.00)', '13:00:00', '21:00:00']
+                ] as $jadwal)
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2">{{ $jadwal[0] }}</td>
+                        <td class="px-4 py-2">{{ $jadwal[1] }}</td>
+                        <td class="px-4 py-2">{{ $jadwal[2] }}</td>
+                        <td class="px-4 py-2">{{ $jadwal[3] }}</td>
+                        <td class="px-4 py-2">{{ $jadwal[4] }}</td>
+                        <td class="px-4 py-2">{{ $jadwal[5] }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Attention Boxes -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-red-50 border border-red-400 rounded-xl p-4 text-red-600 text-sm">
+            <p class="font-semibold text-lg">⚠ Attention!</p>
+            <p class="mt-1">Tidak ada catatan</p>
+        </div>
+        <div class="bg-green-50 border border-green-400 rounded-xl p-4 text-green-700 text-sm">
+            <p class="font-semibold text-lg">✅ Tidak Memiliki Kekurangan Kerja</p>
+            <p class="text-sm mt-2">+ 0j 0m</p>
+            <a href="#" class="inline-block mt-2 text-xs text-blue-800 underline font-semibold">Lihat Detail</a>
+        </div>
+    </div>
+
 </div>
 @endsection
