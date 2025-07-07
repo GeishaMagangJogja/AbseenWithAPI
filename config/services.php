@@ -31,4 +31,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'wablas' => [
+        'api_key' => env('WABLAS_API_KEY'),
+        'server_url' => env('WABLAS_SERVER_URL'),
+    ],
+
+    'fonnte' => [
+        'token' => env('FONNTE_TOKEN'),
+    ],
+
 ];
