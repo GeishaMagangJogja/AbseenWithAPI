@@ -13,8 +13,6 @@ return new class extends Migration
     {
         Schema::create('kontak_walis', function (Blueprint $table) {
             $table->id();
-            // Foreign key yang terhubung ke tabel siswa.
-            // onDelete('cascade') berarti jika siswa dihapus, data kontak ini juga ikut terhapus.
             $table->foreignId('siswa_id')->constrained()->onDelete('cascade');
             $table->string('nama_wali');
             $table->string('no_hp');
