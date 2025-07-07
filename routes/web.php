@@ -1,20 +1,36 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AbsensiController;
+use Illuminate\Support\Facades\Http;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
-Route::get('/', [AbsensiController::class, 'index'])->name('absensi.index');
+// Route test WhatsApp
+Route::get('/test-wa', function() {
+    $testPhone = '6281327659373'; // Ganti dengan nomor tujuan yang valid
+    $testMessage = 'Test notifikasi dari sistem absensi';
+    
+    try {
+        $response = Http::withHeaders([
+            'Authorization' => env('WHATSAPP_API_KEY'),
+        ])->post('https://api.fonnte.com/send', [
+            'target' => $testPhone,
+            'message' => $testMessage,
+        ]);
+        
+        return response()->json([
+            'status' => $response->status(),
+            'response' => $response->json(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
 
-Route::resource('absensi', AbsensiController::class);
-Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
+// Route lainnya...
+Route::get('/', function () {
+    return view('welcome');
+});
 
+// Route absensi
+Route::resource('absensi', 'App\Http\Controllers\AbsensiController');
