@@ -32,7 +32,7 @@ class SiswaDanWaliSeeder extends Seeder
         KontakWali::create([
             'siswa_id' => $siswa2->id,
             'nama_wali' => 'Santoso Hadi',
-            'no_hp' => '6289876543210',
+            'no_hp' => '6282241279426',
             'status_hubungan' => 'Ayah',
         ]);
 

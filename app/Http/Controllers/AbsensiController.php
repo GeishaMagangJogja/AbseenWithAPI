@@ -47,30 +47,28 @@ class AbsensiController extends Controller
     }
 
     private function kirimNotifikasiWhatsApp(Absensi $absensi)
-{
-    $siswa = $absensi->siswa;
-    $kontakWali = KontakWali::where('siswa_id', $siswa->id)->first();
+    {
+        $siswa = $absensi->siswa;
+        $kontakWali = KontakWali::where('siswa_id', $siswa->id)->first();
 
-    if (!$kontakWali || !$kontakWali->no_hp) {
-        Log::error('Data kontak wali tidak ditemukan untuk siswa: ' . $siswa->id);
-        return false;
-    }
+        if (!$kontakWali || !$kontakWali->no_hp) {
+            Log::error('Data kontak wali tidak ditemukan untuk siswa: ' . $siswa->id);
+            return false;
+        }
 
-    $nomorTujuan = $this->formatPhoneNumber($kontakWali->no_hp);
-    if (!$nomorTujuan) {
-        Log::error('Format nomor HP tidak valid: ' . $kontakWali->no_hp);
-        return false;
-    }
+        $nomorTujuan = $this->formatPhoneNumber($kontakWali->no_hp);
+        if (!$nomorTujuan) {
+            Log::error('Format nomor HP tidak valid: ' . $kontakWali->no_hp);
+            return false;
+        }
 
-    $pesan = $this->formatPesanNotifikasi($absensi, $siswa, $kontakWali);
 
-    // Debugging: Log what we're about to send
-    Log::debug('Attempting to send WhatsApp to: ' . $nomorTujuan);
-    Log::debug('Message content: ' . $pesan);
-    Log::debug('Using API key: ' . env('WHATSAPP_API_KEY'));
+
+        $pesan = $this->formatPesanNotifikasi($absensi, $siswa, $kontakWali);
 
     try {
-        $response = Http::timeout(15)
+        $response = Http::withoutVerifying()
+            ->timeout(15)
             ->withHeaders([
                 'Authorization' => env('WHATSAPP_API_KEY'),
                 'Content-Type' => 'application/json',
@@ -78,41 +76,34 @@ class AbsensiController extends Controller
             ->post('https://api.fonnte.com/send', [
                 'target' => $nomorTujuan,
                 'message' => $pesan,
-                'delay' => 2,
+                'delay' => '2-5',
             ]);
 
-        // Full response logging
-        Log::debug('API Response: ', [
-            'status' => $response->status(),
-            'body' => $response->body(),
-            'headers' => $response->headers(),
-        ]);
-
-        if ($response->successful()) {
-            Log::info('Notifikasi WhatsApp berhasil dikirim ke: ' . $nomorTujuan);
-            return true;
-        } else {
-            Log::error('Gagal mengirim WhatsApp. Status: ' . $response->status());
-            Log::error('Response body: ' . $response->body());
+            if ($response->successful()) {
+                Log::info('Notifikasi WhatsApp berhasil dikirim ke: ' . $nomorTujuan);
+                return true;
+            } else {
+                Log::error('Gagal mengirim WhatsApp. Status: ' . $response->status());
+                Log::error('Response body: ' . $response->body());
+                return false;
+            }
+        } catch (\Exception $e) {
+            Log::error('Exception saat mengirim WhatsApp: ' . $e->getMessage());
             return false;
         }
-    } catch (\Exception $e) {
-        Log::error('Exception saat mengirim WhatsApp: ' . $e->getMessage());
-        return false;
     }
-}
 
     private function formatPhoneNumber($phone)
     {
         // Hapus semua karakter non-digit
         $phone = preg_replace('/[^0-9]/', '', $phone);
-        
+
         // Jika diawali dengan 0, ganti dengan 62 (kode negara Indonesia)
         if (strlen($phone) > 0 && $phone[0] === '0') {
             $phone = '62' . substr($phone, 1);
         }
-        
-        // Pastikan panjang minimal 10 digit (62+8 digit)
+
+        // Pastikan nomor minimal 10 digit (62+8 digit)
         return (strlen($phone) >= 10) ? $phone : null;
     }
 
@@ -136,5 +127,34 @@ class AbsensiController extends Controller
                "Status: *{$status}*\n" .
                "Jam Masuk: *" . ($absensi->jam_masuk ?? '-') . "*\n\n" .
                "_Pesan ini dikirim otomatis, mohon tidak membalas._";
+    }
+
+    // Method untuk testing notifikasi
+    public function testNotifikasi()
+    {
+        $testPhone = '6282241279326';
+        $testMessage = 'Test notifikasi dari sistem absensi';
+
+        try {
+            $response = Http::timeout(15)
+                ->withHeaders([
+                    'Authorization' => env('WHATSAPP_API_KEY'),
+                    'Content-Type' => 'application/json',
+                ])
+                ->post('https://api.fonnte.com/send', [
+                    'target' => $testPhone,
+                    'message' => $testMessage,
+                    'delay' => '2-5',
+                ]);
+
+            return response()->json([
+                'status' => $response->status(),
+                'response' => $response->json(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
