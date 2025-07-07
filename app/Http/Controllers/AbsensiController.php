@@ -9,77 +9,72 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Notifications\AbsensiNotifikasi;
 
 class AbsensiController extends Controller
 {
-public function index()
-{
-    $absensis = Absensi::with('siswa')->orderBy('tanggal', 'desc')->get();
-    return view('index', compact('absensis')); // Changed from 'index' to 'absensi.index'
-}
+ public function index()
+    {
+        $absensis = Absensi::with('siswa')->orderBy('tanggal', 'desc')->get();
+        return view('index', compact('absensis'));
+    }
+
     public function create()
     {
         $siswas = Siswa::all();
         return view('absensi.create', compact('siswas'));
     }
 
-   public function store(Request $request)
-{
-    $request->validate([
-        'siswa_id' => [
-            'required',
-            'exists:siswas,id',
-            Rule::unique('absensis')->where(function ($query) use ($request) {
-                return $query->where('tanggal', $request->tanggal);
-            }),
-        ],
-        'tanggal' => 'required|date',
-        'status' => 'required|in:hadir,izin,sakit,alpha',
-        'keterangan' => 'nullable|string',
-    ]);
-
-    DB::beginTransaction();
-
-    try {
-        // Simpan absensi
-        $absensi = Absensi::create($request->all());
-        $siswa = $absensi->siswa;
-
-        // Validasi nomor WhatsApp
-        if (empty($siswa->nomor_wa_ortu)) {
-            throw new \Exception('Nomor WhatsApp orang tua tidak tersedia');
-        }
-
-        // Format pesan
-        $pesan = $this->formatPesanAbsensi($absensi);
-
-        // Kirim WhatsApp
-        $success = WhatsApp::sendMessage($siswa->nomor_wa_ortu, $pesan);
-
-        if (!$success) {
-            throw new \Exception('Gagal mengirim notifikasi WhatsApp');
-        }
-
-        DB::commit();
-
-        return redirect()
-            ->route('absensi.index')
-            ->with('success', 'Absensi berhasil ditambahkan & notifikasi WhatsApp terkirim.');
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        Log::error('Absensi Error: ' . $e->getMessage(), [
-            'exception' => $e,
-            'request' => $request->all()
+    public function store(Request $request)
+    {
+        $request->validate([
+            'siswa_id' => [
+                'required',
+                'exists:siswas,id',
+                Rule::unique('absensis')->where(function ($query) use ($request) {
+                    return $query->where('tanggal', $request->tanggal);
+                }),
+            ],
+            'tanggal' => 'required|date',
+            'status' => 'required|in:hadir,izin,sakit,alpha',
+            'keterangan' => 'nullable|string',
         ]);
 
-        return redirect()
-            ->back()
-            ->withInput()
-            ->with('error', 'Gagal menyimpan absensi: ' . $e->getMessage());
+        DB::beginTransaction();
+
+        try {
+            // Simpan absensi
+            $absensi = Absensi::create($request->all());
+            $siswa = $absensi->siswa;
+
+            // Validasi nomor WhatsApp
+            if (empty($siswa->nomor_wa_ortu)) {
+                throw new \Exception('Nomor WhatsApp orang tua tidak tersedia');
+            }
+
+            // Kirim notifikasi via Fonnte
+            $siswa->notify(new AbsensiNotifikasi($absensi));
+
+            DB::commit();
+
+            return redirect()
+                ->route('absensi.index')
+                ->with('success', 'Absensi berhasil ditambahkan & notifikasi WhatsApp terkirim.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Absensi Error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all()
+            ]);
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Gagal menyimpan absensi: ' . $e->getMessage());
+        }
     }
-}
 
     private function formatPesanAbsensi($absensi)
     {
