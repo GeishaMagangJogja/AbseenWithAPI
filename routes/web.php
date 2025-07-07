@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AbsensiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -12,7 +13,8 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+Route::get('/', [AbsensiController::class, 'index'])->name('absensi.index');
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::resource('absensi', AbsensiController::class);
+Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
+
