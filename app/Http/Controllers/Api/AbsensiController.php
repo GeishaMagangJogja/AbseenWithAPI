@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Absensi;
-use App\Notifications\NotifAbsensiSiswa; // <-- Pastikan Notifikasi sudah dibuat
+use App\Notifications\NotifAbsensiSiswa;
 use Carbon\Carbon;
 
 class AbsensiController extends Controller

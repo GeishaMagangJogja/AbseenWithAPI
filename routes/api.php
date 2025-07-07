@@ -20,11 +20,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // --- Rute Baru Kita ---
     // Rute untuk menambah siswa baru
-    Route::post('/siswa', [SiswaController::class, 'store']);
-    
+});
+
+Route::post('/siswa', [SiswaController::class, 'store']);
+
     // Rute untuk menambah kontak wali ke siswa tertentu
-    Route::post('/siswa/{siswa}/kontak-wali', [KontakWaliController::class, 'store']);
+Route::post('/siswa/{siswa}/kontak-wali', [KontakWaliController::class, 'store']);
 
     // Rute untuk melakukan absensi
-    Route::post('/absensi', [AbsensiController::class, 'store']);
-});
+Route::post('/absensi', [AbsensiController::class, 'store']);

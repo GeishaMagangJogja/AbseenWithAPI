@@ -12,34 +12,34 @@ class FonnteChannel
     public function send($notifiable, Notification $notification)
     {
         try {
-            // Panggil metode toFonnte() dari kelas Notifikasi untuk mendapatkan data
             $data = $notification->toFonnte($notifiable);
-
-            // Ambil token dari config
             $token = config('services.fonnte.token');
+            $url = config('services.fonnte.url');
 
-            // Hentikan jika token tidak ada
             if (!$token) {
-                Log::error('Fonnte Token tidak ditemukan di file .env.');
-                return;
+                Log::error('Fonnte Token tidak ditemukan di file .env');
+                return false;
             }
 
-            // Kirim request ke API Fonnte
             $response = Http::withHeaders([
-                'Authorization' => $token, // Fonnte menggunakan 'Authorization' header
-            ])->post('https://api.fonnte.com/send', [
+                'Authorization' => $token,
+            ])->post($url, [
                 'target' => $data['target'],
                 'message' => $data['message'],
-                // Bisa ditambahkan parameter lain seperti 'countryCode' jika perlu
+                'delay' => $data['delay'] ?? 0,
             ]);
 
-            // Lemparkan exception jika request gagal
             $response->throw();
 
-            Log::info('Notifikasi Fonnte berhasil masuk antrean: ' . $response->body());
+            Log::info('Notifikasi Fonnte berhasil dikirim: ' . $response->body());
+            return true;
 
         } catch (RequestException $e) {
             Log::error('Gagal mengirim notifikasi Fonnte: ' . $e->getMessage());
+            if ($e->response) {
+                Log::error('Response error: ' . $e->response->body());
+            }
+            return false;
         }
     }
 }

@@ -17,8 +17,6 @@ class KontakWaliController extends Controller
             'status_hubungan' => 'required|string',
         ]);
 
-        // Menggunakan relasi untuk membuat/update kontak.
-        // Sangat praktis untuk memastikan satu siswa hanya punya satu kontak wali.
         $kontak = $siswa->kontakWali()->updateOrCreate(
             ['siswa_id' => $siswa->id],
             $validated
